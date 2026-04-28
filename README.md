@@ -2,6 +2,8 @@
 
 AI 어시스턴트 기능을 포함한 로컬 분석 대시보드입니다.
 
+![AI 분석 대시보드 스크린샷](docs/assets/dashboard-screenshot.png)
+
 - 프론트엔드: Next.js, TypeScript, Tailwind CSS
 - 백엔드: FastAPI
 - LLM 제공자: `http://localhost:11434`에서 실행되는 Ollama
@@ -21,6 +23,9 @@ AI 어시스턴트 기능을 포함한 로컬 분석 대시보드입니다.
 |   |   |-- ollama.py
 |   |   `-- schemas.py
 |   `-- requirements.txt
+|-- docs
+|   `-- assets
+|       `-- dashboard-screenshot.png
 |-- frontend
 |   |-- .env.local.example
 |   |-- eslint.config.mjs
