@@ -1,0 +1,15 @@
+name: ai-manager-frontend
+app: dockerfile
+options:
+  ports: 3000
+  dockerfile: frontend/Dockerfile
+  env:
+    - name: PORT
+      value: "3000"
+    - name: BACKEND_API_BASE_URL
+      value: "https://your-backend-domain.example.com"
+context:
+  git:
+    url: https://github.com/ssokjiwon/AI-manager.git
+    branch: main
+  preset: dockerfile
