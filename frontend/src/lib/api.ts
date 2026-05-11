@@ -4,7 +4,8 @@ import type {
   DashboardData,
 } from "@/types/dashboard";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
 export async function getAiSummary(
   dashboard: DashboardData,
@@ -38,7 +39,7 @@ async function postJson<TResponse>(
 
   if (!response.ok) {
     const detail = await readErrorDetail(response);
-    throw new Error(detail ?? `요청 실패, HTTP ${response.status}`);
+    throw new Error(detail ?? `요청 실패: HTTP ${response.status}`);
   }
 
   return response.json() as Promise<TResponse>;
