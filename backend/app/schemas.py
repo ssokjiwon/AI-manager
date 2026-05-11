@@ -35,9 +35,5 @@ class AiSummaryResponse(BaseModel):
     recommendations: list[str]
 
 
-class AiInsightsResponse(BaseModel):
-    insights: list[str]
-
-
 class AiChatResponse(BaseModel):
     answer: str

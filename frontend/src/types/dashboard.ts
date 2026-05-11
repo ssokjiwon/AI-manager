@@ -1,54 +1,34 @@
-export type Metric = {
-  label: string;
-  value: string;
-  rawValue: number;
-  change: number;
-  status: "good" | "warning" | "critical";
-};
+export type TaskStatus = "todo" | "doing" | "done";
+export type TaskPriority = "low" | "medium" | "high";
 
-export type TrendPoint = {
-  label: string;
-  value: number;
-};
-
-export type Segment = {
-  label: string;
-  value: number;
-  color: string;
-};
-
-export type StatusItem = {
-  label: string;
-  value: string;
-  detail: string;
-  state: "Stable" | "Watch" | "Critical";
-};
-
-export type Activity = {
+export type TaskItem = {
   id: string;
-  user: string;
-  event: string;
-  status: "Success" | "Review" | "Failed";
-  time: string;
+  title: string;
+  dueDate: string;
+  priority: TaskPriority;
+  status: TaskStatus;
 };
 
-export type DashboardData = {
-  period: string;
-  metrics: Metric[];
-  trend: TrendPoint[];
-  segments: Segment[];
-  statuses: StatusItem[];
-  activity: Activity[];
+export type ScheduleItem = {
+  id: string;
+  title: string;
+  date: string;
+  time: string;
+  location: string;
 };
+
+export type PlannerData = {
+  period: string;
+  tasks: TaskItem[];
+  schedules: ScheduleItem[];
+};
+
+export type DashboardData = PlannerData;
 
 export type AiSummaryResponse = {
   summary: string;
   warnings: string[];
   recommendations: string[];
-};
-
-export type AiInsightsResponse = {
-  insights: string[];
 };
 
 export type AiChatMessage = {

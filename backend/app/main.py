@@ -8,7 +8,6 @@ from app.config import settings
 from app.ollama import OllamaClient
 from app.schemas import (
     AiChatResponse,
-    AiInsightsResponse,
     AiSummaryResponse,
     ChatMessage,
     ChatRequest,
@@ -18,7 +17,7 @@ from app.schemas import (
 )
 
 
-app = FastAPI(title="로컬 AI 분석 API")
+app = FastAPI(title="로컬 AI 일정 관리 API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -60,25 +59,26 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
 @app.post("/ai/summary", response_model=AiSummaryResponse)
 async def ai_summary(request: DashboardAiRequest) -> AiSummaryResponse:
-    dashboard_json = _dashboard_json(request.dashboard)
+    planner_json = _dashboard_json(request.dashboard)
     prompt = f"""
-당신은 분석 대시보드 어시스턴트입니다. 아래 대시보드 데이터를 분석하고 엄격한 JSON만 반환하세요.
+당신은 할 일과 일정을 관리해 주는 한국어 AI 비서입니다.
+아래 데이터를 보고 엄격한 JSON만 반환하세요.
 
-대시보드 데이터:
-{dashboard_json}
+할 일과 일정 데이터:
+{planner_json}
 
-다음 JSON 형식으로 반환하세요:
+반환 형식:
 {{
-  "summary": "간결한 자연어 요약 한 문장",
-  "warnings": ["위험 경고 1", "위험 경고 2"],
-  "recommendations": ["다음 실행 항목 1", "다음 실행 항목 2", "다음 실행 항목 3"]
+  "summary": "오늘 또는 이번 주에 집중해야 할 내용을 한두 문장으로 요약",
+  "warnings": ["마감 임박, 일정 충돌, 과부하 같은 주의점"],
+  "recommendations": ["다음 행동 1", "다음 행동 2", "다음 행동 3"]
 }}
 
 규칙:
-- 비정상 값, 급격한 변화, 운영 리스크를 언급하세요.
-- 각 경고와 추천은 짧게 작성하세요.
+- 반드시 한국어로 답하세요.
 - 마크다운을 포함하지 마세요.
-- 모든 답변은 한국어로 작성하세요.
+- 없는 데이터는 추측하지 마세요.
+- 할 일 우선순위, 마감일, 일정 시간을 중심으로 판단하세요.
 """
 
     content = await _ask_ollama(prompt)
@@ -94,49 +94,17 @@ async def ai_summary(request: DashboardAiRequest) -> AiSummaryResponse:
     return AiSummaryResponse(summary=content, warnings=[], recommendations=[])
 
 
-@app.post("/ai/insights", response_model=AiInsightsResponse)
-async def ai_insights(request: DashboardAiRequest) -> AiInsightsResponse:
-    dashboard_json = _dashboard_json(request.dashboard)
-    prompt = f"""
-당신은 분석 대시보드 어시스턴트입니다. 대시보드 데이터에서 유용한 인사이트 3-5개를 생성하세요.
-
-대시보드 데이터:
-{dashboard_json}
-
-엄격한 JSON만 반환하세요:
-{{
-  "insights": ["인사이트 1", "인사이트 2", "인사이트 3"]
-}}
-
-규칙:
-- 실제 지표 값과 변화율을 사용하세요.
-- 매출, 활동, 위험, 전환율, 최근 이벤트를 우선적으로 다루세요.
-- 마크다운을 포함하지 마세요.
-- 모든 답변은 한국어로 작성하세요.
-"""
-
-    content = await _ask_ollama(prompt)
-    data = _extract_json(content)
-
-    if isinstance(data, dict):
-        insights = _string_list(data.get("insights"))
-        if insights:
-            return AiInsightsResponse(insights=insights[:5])
-
-    return AiInsightsResponse(insights=_lines(content)[:5])
-
-
 @app.post("/ai/chat", response_model=AiChatResponse)
 async def ai_chat(request: DashboardChatRequest) -> AiChatResponse:
-    dashboard_json = _dashboard_json(request.dashboard)
+    planner_json = _dashboard_json(request.dashboard)
     history = "\n".join(
         f"{message.role}: {message.content}" for message in request.messages[-8:]
     )
     prompt = f"""
-당신은 이 대시보드에 대한 질문에 답하는 분석 어시스턴트입니다.
+당신은 사용자의 할 일과 일정을 도와주는 한국어 AI 비서입니다.
 
-대시보드 데이터:
-{dashboard_json}
+할 일과 일정 데이터:
+{planner_json}
 
 최근 대화:
 {history}
@@ -144,7 +112,9 @@ async def ai_chat(request: DashboardChatRequest) -> AiChatResponse:
 사용자 질문:
 {request.question}
 
-데이터에 근거해 간결하게 한국어로 답하세요. 데이터가 부족하면 무엇이 부족한지 말하세요.
+데이터에 근거해 짧고 실용적으로 답하세요.
+일정 충돌, 우선순위, 오늘 먼저 할 일, 마감 임박 항목을 잘 판단하세요.
+데이터가 부족하면 무엇이 부족한지 말하세요.
 """
 
     content = await _ask_ollama(prompt)
@@ -196,11 +166,3 @@ def _string_list(value: object) -> list[str]:
 
     return [item.strip() for item in value if isinstance(item, str) and item.strip()]
 
-
-def _lines(content: str) -> list[str]:
-    cleaned = []
-    for line in content.splitlines():
-        item = line.strip().lstrip("-*0123456789. ")
-        if item:
-            cleaned.append(item)
-    return cleaned

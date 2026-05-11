@@ -1,6 +1,5 @@
 import type {
   AiChatMessage,
-  AiInsightsResponse,
   AiSummaryResponse,
   DashboardData,
 } from "@/types/dashboard";
@@ -12,12 +11,6 @@ export async function getAiSummary(
   dashboard: DashboardData,
 ): Promise<AiSummaryResponse> {
   return postJson<AiSummaryResponse>("/ai/summary", { dashboard });
-}
-
-export async function generateInsights(
-  dashboard: DashboardData,
-): Promise<AiInsightsResponse> {
-  return postJson<AiInsightsResponse>("/ai/insights", { dashboard });
 }
 
 export async function askDashboardQuestion(

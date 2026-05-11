@@ -2,17 +2,17 @@
 
 import { FormEvent, useState } from "react";
 import { askDashboardQuestion } from "@/lib/api";
-import type { AiChatMessage, DashboardData } from "@/types/dashboard";
+import type { AiChatMessage, PlannerData } from "@/types/dashboard";
 
 type Props = {
-  dashboard: DashboardData;
+  dashboard: PlannerData;
 };
 
 export function AiChatPanel({ dashboard }: Props) {
   const [messages, setMessages] = useState<AiChatMessage[]>([
     {
       role: "assistant",
-      content: "매출, 위험, 전환율, 최근 활동에 대해 질문해 주세요.",
+      content: "할 일, 마감일, 일정 우선순위에 대해 질문해 주세요.",
     },
   ]);
   const [question, setQuestion] = useState("");
@@ -52,7 +52,9 @@ export function AiChatPanel({ dashboard }: Props) {
     <aside className="rounded-2xl border border-slate-100 bg-white p-5 shadow-card">
       <div>
         <h2 className="text-lg font-semibold text-slate-950">AI 채팅 패널</h2>
-        <p className="mt-1 text-sm text-slate-500">이 대시보드에 대해 질문하세요</p>
+        <p className="mt-1 text-sm text-slate-500">
+          현재 할 일과 일정에 대해 질문하세요
+        </p>
       </div>
 
       <div className="mt-5 flex max-h-[460px] flex-col gap-3 overflow-y-auto rounded-xl bg-slate-50 p-3">
@@ -77,7 +79,7 @@ export function AiChatPanel({ dashboard }: Props) {
           className="min-h-24 resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
           disabled={isLoading}
           onChange={(event) => setQuestion(event.target.value)}
-          placeholder="위험 점수가 왜 증가했나요?"
+          placeholder="오늘 가장 먼저 해야 할 일은 뭐야?"
           value={question}
         />
         <button
