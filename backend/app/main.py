@@ -1,4 +1,5 @@
 import json
+import re
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,6 +30,11 @@ app.add_middleware(
 
 ollama_client = OllamaClient()
 
+PLAIN_TEXT_RULE = (
+    "답변 문장에는 쉼표와 마침표를 제외한 포맷팅 기호를 쓰지 마세요. "
+    "불릿, 번호 매김, 마크다운, 괄호, 콜론, 세미콜론, 줄바꿈을 쓰지 마세요."
+)
+
 
 @app.get("/health")
 async def health() -> dict[str, str]:
@@ -54,7 +60,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
     except ValueError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
-    return ChatResponse(message=ChatMessage(role="assistant", content=content))
+    return ChatResponse(message=ChatMessage(role="assistant", content=_plain_text(content)))
 
 
 @app.post("/ai/summary", response_model=AiSummaryResponse)
@@ -76,9 +82,9 @@ async def ai_summary(request: DashboardAiRequest) -> AiSummaryResponse:
 
 규칙:
 - 반드시 한국어로 답하세요.
-- 마크다운을 포함하지 마세요.
 - 없는 데이터는 추측하지 마세요.
 - 할 일 우선순위, 마감일, 일정 시간을 중심으로 판단하세요.
+- {PLAIN_TEXT_RULE}
 """
 
     content = await _ask_ollama(prompt)
@@ -86,12 +92,14 @@ async def ai_summary(request: DashboardAiRequest) -> AiSummaryResponse:
 
     if isinstance(data, dict):
         return AiSummaryResponse(
-            summary=_string_or_default(data.get("summary"), content),
-            warnings=_string_list(data.get("warnings")),
-            recommendations=_string_list(data.get("recommendations")),
+            summary=_plain_text(_string_or_default(data.get("summary"), content)),
+            warnings=[_plain_text(item) for item in _string_list(data.get("warnings"))],
+            recommendations=[
+                _plain_text(item) for item in _string_list(data.get("recommendations"))
+            ],
         )
 
-    return AiSummaryResponse(summary=content, warnings=[], recommendations=[])
+    return AiSummaryResponse(summary=_plain_text(content), warnings=[], recommendations=[])
 
 
 @app.post("/ai/chat", response_model=AiChatResponse)
@@ -115,10 +123,11 @@ async def ai_chat(request: DashboardChatRequest) -> AiChatResponse:
 데이터에 근거해 짧고 실용적으로 답하세요.
 일정 충돌, 우선순위, 오늘 먼저 할 일, 마감 임박 항목을 잘 판단하세요.
 데이터가 부족하면 무엇이 부족한지 말하세요.
+{PLAIN_TEXT_RULE}
 """
 
     content = await _ask_ollama(prompt)
-    return AiChatResponse(answer=content)
+    return AiChatResponse(answer=_plain_text(content))
 
 
 async def _ask_ollama(prompt: str) -> str:
@@ -166,3 +175,10 @@ def _string_list(value: object) -> list[str]:
 
     return [item.strip() for item in value if isinstance(item, str) and item.strip()]
 
+
+def _plain_text(value: str) -> str:
+    text = re.sub(r"[\r\n\t]+", " ", value)
+    text = re.sub(r"[*#`_~>\[\]{}()<>:;|/\\\"'!?]", "", text)
+    text = re.sub(r"\s*[-•]\s*", " ", text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
