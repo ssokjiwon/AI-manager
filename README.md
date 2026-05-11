@@ -6,9 +6,54 @@
 
 - 프론트엔드: Next.js, TypeScript, Tailwind CSS
 - 백엔드: FastAPI
-- LLM 제공자: `http://localhost:11434`에서 실행되는 Ollama
+- LLM: Ollama
 - 모델: `qwen3.5:9b`
 - 주요 기능: 할 일 추가, 일정 추가, 완료 처리, AI 업무 요약, AI 채팅
+
+## 파일 구조
+
+```text
+.
+|-- README.md
+|-- main.py
+|-- docs
+|   `-- assets
+|       `-- app-screenshot.png
+|-- backend
+|   |-- .env.example
+|   |-- requirements.txt
+|   `-- app
+|       |-- __init__.py
+|       |-- config.py
+|       |-- main.py
+|       |-- ollama.py
+|       `-- schemas.py
+`-- frontend
+    |-- .env.local.example
+    |-- eslint.config.mjs
+    |-- next-env.d.ts
+    |-- next.config.ts
+    |-- package.json
+    |-- package-lock.json
+    |-- postcss.config.mjs
+    |-- tailwind.config.ts
+    |-- tsconfig.json
+    `-- src
+        |-- app
+        |   |-- globals.css
+        |   |-- layout.tsx
+        |   `-- page.tsx
+        |-- components
+        |   |-- AiChatPanel.tsx
+        |   `-- AiSummaryCard.tsx
+        |-- data
+        |   `-- dashboard.ts
+        |-- lib
+        |   `-- api.ts
+        `-- types
+            |-- chat.ts
+            `-- dashboard.ts
+```
 
 ## 주요 화면
 
