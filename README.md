@@ -82,9 +82,22 @@ Start Command: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
 Healthcheck Path: /health
 ```
 
+만약 Railway에서 Root Directory를 비워두고 저장소 루트로 배포한다면 아래 명령을 사용하세요.
+
+```text
+Build Command: cd backend && pip install -r requirements.txt
+Start Command: cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+`uvicorn app.main:app ...`처럼 시작하면 Railway에서 `uvicorn: command not found`가 날 수 있습니다. 반드시 `python -m uvicorn ...` 형태로 실행하세요.
+
+Railway UI에 예전 Start Command가 직접 입력되어 있으면 저장소의 `railway.json`보다 UI 설정이 우선될 수 있습니다. Railway 설정 화면에서 Start Command override를 지우거나 위 명령으로 바꿔야 합니다.
+
 이 저장소에는 Railway용 파일이 이미 들어 있습니다.
 
 ```text
+Procfile
+railway.json
 backend/Procfile
 backend/railway.json
 backend/runtime.txt
