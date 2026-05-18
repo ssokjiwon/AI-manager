@@ -21,7 +21,10 @@
 |       `-- app-screenshot.png
 |-- backend
 |   |-- .env.example
+|   |-- Procfile
+|   |-- railway.json
 |   |-- requirements.txt
+|   |-- runtime.txt
 |   `-- app
 |       |-- __init__.py
 |       |-- config.py
@@ -55,39 +58,103 @@
             `-- dashboard.ts
 ```
 
-## 주요 화면
-
-- 할 일 추가: 제목, 마감일, 우선순위를 입력합니다.
-- 일정 추가: 일정 이름, 날짜, 시간, 장소를 입력합니다.
-- 할 일 목록: 항목을 클릭해 완료 또는 진행 상태를 바꿉니다.
-- 일정 목록: 등록된 일정을 확인합니다.
-- AI 업무 요약: 현재 할 일과 일정을 바탕으로 주의점과 추천 행동을 생성합니다.
-- AI 채팅 패널: 현재 할 일과 일정에 대해 질문할 수 있습니다.
-
 ## 아키텍처
 
-1. Next.js가 할 일과 일정 관리 화면을 렌더링합니다.
-2. 사용자는 할 일과 일정을 추가하고 목록을 확인합니다.
-3. AI 요약과 AI 채팅은 현재 할 일과 일정 데이터를 FastAPI로 보냅니다.
-4. FastAPI는 데이터를 프롬프트에 포함해 Ollama `/api/chat`을 호출합니다.
-5. Ollama 응답을 프론트엔드에 반환합니다.
+```text
+Vercel frontend
+→ Railway FastAPI backend
+→ ngrok Ollama URL
+→ local Ollama
+```
 
-## 백엔드 엔드포인트
+Railway에는 FastAPI 백엔드만 배포합니다. Ollama는 Railway에 같이 올라가지 않습니다. 로컬 PC에서 Ollama를 실행하고 ngrok으로 `11434` 포트를 공개한 뒤, 그 URL을 Railway 환경 변수에 넣습니다.
 
-- `POST /ai/summary`: 할 일과 일정 기반 요약, 주의점, 추천 행동을 반환합니다.
-- `POST /ai/chat`: 현재 할 일과 일정에 대한 질문에 답합니다.
-- `POST /chat`: 기본 채팅 엔드포인트입니다.
+## Railway 백엔드 배포
 
-## Ollama 실행
+Railway에서 새 서비스를 만들고 GitHub 저장소를 연결합니다.
+
+설정:
+
+```text
+Root Directory: backend
+Builder: Nixpacks
+Start Command: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+Healthcheck Path: /health
+```
+
+이 저장소에는 Railway용 파일이 이미 들어 있습니다.
+
+```text
+backend/Procfile
+backend/railway.json
+backend/runtime.txt
+```
+
+Railway 환경 변수:
+
+```text
+APP_OLLAMA_BASE_URL=https://your-ngrok-url.ngrok-free.app
+APP_OLLAMA_MODEL=qwen3.5:9b
+APP_CORS_ORIGINS=["https://your-vercel-app.vercel.app"]
+```
+
+주의할 점:
+
+```text
+APP_OLLAMA_BASE_URL=http://localhost:11434
+```
+
+이 값은 Railway에서 쓰면 안 됩니다. Railway의 `localhost`는 네 컴퓨터가 아니라 Railway 컨테이너 자신입니다.
+
+## ngrok으로 Ollama 공개
+
+로컬 PC에서 Ollama를 실행합니다.
+
+```powershell
+ollama serve
+```
+
+다른 터미널에서 ngrok을 실행합니다.
+
+```powershell
+ngrok http 11434
+```
+
+ngrok이 보여주는 HTTPS URL을 Railway의 `APP_OLLAMA_BASE_URL`에 넣습니다.
+
+예:
+
+```text
+APP_OLLAMA_BASE_URL=https://abc123.ngrok-free.app
+```
+
+## Vercel 프론트엔드 설정
+
+Vercel에는 `frontend` 폴더를 배포합니다.
+
+```text
+Root Directory: frontend
+Build Command: npm run build
+Install Command: npm install
+Output Directory: .next
+```
+
+Vercel 환경 변수:
+
+```text
+NEXT_PUBLIC_API_BASE_URL=https://your-railway-backend.up.railway.app
+```
+
+## 로컬 실행
+
+Ollama:
 
 ```powershell
 ollama pull qwen3.5:9b
 ollama serve
 ```
 
-`11434` 포트가 이미 사용 중이라고 나오면 Ollama가 이미 실행 중인 것입니다.
-
-## 백엔드 실행
+백엔드:
 
 ```powershell
 cd C:\Users\pc\Desktop\tjrwldnjs\backend
@@ -95,7 +162,7 @@ cd C:\Users\pc\Desktop\tjrwldnjs\backend
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
 ```
 
-## 프론트엔드 실행
+프론트엔드:
 
 ```powershell
 cd C:\Users\pc\Desktop\tjrwldnjs\frontend
@@ -107,20 +174,4 @@ npm.cmd run dev
 
 ```text
 http://localhost:3000
-```
-
-## 환경 변수
-
-백엔드:
-
-```text
-APP_OLLAMA_BASE_URL=http://localhost:11434
-APP_OLLAMA_MODEL=qwen3.5:9b
-APP_CORS_ORIGINS=["http://localhost:3000"]
-```
-
-프론트엔드:
-
-```text
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 ```
